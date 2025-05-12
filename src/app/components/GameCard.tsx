@@ -1,12 +1,14 @@
-// src/components/GameCard.tsx
-import React from 'react';
+'use client';
+
+import React, { useState } from 'react';
+import Image from 'next/image';
 
 interface GameCardProps {
   id: string;
   name: string;
   provider: string;
   thumbnailUrl: string;
-  thumbnailAlt: string;
+  thumbnailAlt?: string; 
 }
 
 const GameCard: React.FC<GameCardProps> = ({
@@ -14,13 +16,39 @@ const GameCard: React.FC<GameCardProps> = ({
   name,
   provider,
   thumbnailUrl,
-  thumbnailAlt,
+  thumbnailAlt, 
 }) => {
+  const [isImageError, setIsImageError] = useState(false);
+
+  const altText = thumbnailAlt || `Thumbnail for ${name} game by ${provider}`;
+
   return (
-    <div className="game-card">
-      <img src={thumbnailUrl} alt={thumbnailAlt} style={{ width: '100%', height: 'auto', objectFit: 'cover' }} />
-      <h3>{name}</h3>
-      <p>{provider}</p>
+    <div 
+      className="game-card group cursor-pointer hover:shadow-lg transition-all duration-300 ease-in-out"
+      aria-label={`Game: ${name} by ${provider}`}
+    >
+      {!isImageError ? (
+        <Image
+          src={thumbnailUrl}
+          alt={altText} 
+          width={300}
+          height={200}
+          className="w-full h-48 object-cover"
+          onError={() => setIsImageError(true)}
+          priority={false}
+        />
+      ) : (
+        <div 
+          className="w-full h-48 bg-gray-200 flex items-center justify-center"
+          aria-label={altText} 
+        >
+          Image Not Available
+        </div>
+      )}
+      <div className="p-4">
+        <h3 className="text-lg font-semibold truncate">{name}</h3>
+        <p className="text-sm text-gray-600 truncate">{provider}</p>
+      </div>
     </div>
   );
 };

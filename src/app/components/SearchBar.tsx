@@ -1,4 +1,4 @@
-'use client'; // Mark as client-side
+'use client'; 
 
 import React from 'react';
 

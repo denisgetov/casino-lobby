@@ -1,95 +1,103 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+'use client';
 
-export default function Home() {
-  return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol>
-          <li>
-            Get started by editing <code>src/app/page.tsx</code>.
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+import { useMemo, useState, useEffect } from 'react';
+import SearchBar from './components/SearchBar';
+import Filter from './components/Filter';
+import GameCard from './components/GameCard';
 
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.secondary}
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className={styles.footer}>
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
-  );
+// Fetching Games
+import gamesDataImport from './games.json';
+
+interface Game {
+  id: string;
+  name: string;
+  provider: string;
+  content: {
+    thumbnail: {
+      url: string;
+      altText: string;
+    };
+  };
 }
+
+const Home = () => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedProvider, setSelectedProvider] = useState('');
+  const [gamesData, setGamesData] = useState<Game[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch the games data with error handling
+  useEffect(() => {
+    try {
+      const data = gamesDataImport as Game[];
+      setGamesData(data);
+    } catch (err) {
+      setError('Failed to load games data');
+      console.error('Error loading games data:', err);
+    }
+  }, []);
+
+  const providers = useMemo(() => {
+    if (!gamesData) return [];
+    return Array.from(new Set(gamesData.map((game: Game) => game.provider)));
+  }, [gamesData]);
+
+  const filteredGames = useMemo(() => {
+    if (!gamesData) return [];
+    return gamesData.filter((game: Game) => {
+      const matchesSearch = game.name.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesProvider = selectedProvider ? game.provider === selectedProvider : true;
+      return matchesSearch && matchesProvider;
+    });
+  }, [gamesData, searchTerm, selectedProvider]);
+
+  if (error) {
+    return (
+      <main style={{ padding: '2rem' }}>
+        <h1>Casino Games Lobby</h1>
+        <p style={{ color: 'red' }}>Error: {error}</p>
+      </main>
+    );
+  }
+
+  if (!gamesData) {
+    return (
+      <main style={{ padding: '2rem' }}>
+        <h1>Casino Games Lobby</h1>
+        <p>Loading games...</p>
+      </main>
+    );
+  }
+
+  return (
+    <main style={{ padding: '2rem' }}>
+      <h1>Casino Games Lobby</h1>
+
+      <SearchBar searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
+      <Filter
+        selectedProvider={selectedProvider}
+        setSelectedProvider={setSelectedProvider}
+        providers={providers}
+      />
+
+      <div className="games-grid">
+        {filteredGames.length > 0 ? (
+          filteredGames.map((game: Game) => (
+            <GameCard
+              key={game.id}
+              id={game.id}
+              name={game.name}
+              provider={game.provider}
+              thumbnailUrl={game.content.thumbnail.url}
+              thumbnailAlt={game.content.thumbnail.altText}
+            />
+          ))
+        ) : (
+          <p>No games found.</p>
+        )}
+      </div>
+    </main>
+  );
+};
+
+export default Home;
